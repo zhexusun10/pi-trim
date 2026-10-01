@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1
+
+- Move the Chinese translation into `docs/` so npm selects the English README as the package homepage.
+- Include the completed ten-task comparison in the npm README.
+
 ## 0.1.0
 
 - Initial Pi Package release: npm and GitHub installation, explicit extension manifest, and gallery metadata.

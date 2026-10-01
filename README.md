@@ -8,7 +8,7 @@ Strip Pi-specific identity and documentation from the system prompt. Keep the co
 [![npm](https://img.shields.io/npm/v/pi-trim)](https://www.npmjs.com/package/pi-trim)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-[简体中文](README.zh-CN.md) · [Measured results](benchmarks/README.md) · [Source](extensions/index.ts)
+[简体中文](docs/README.zh-CN.md) · [Measured results](benchmarks/README.md) · [Source](extensions/index.ts)
 
 ![Pi's default system text: 540 to 274 tokens, measured with o200k_base](https://raw.githubusercontent.com/zhexusun10/pi-trim/main/assets/before-after.png)
 

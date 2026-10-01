@@ -1,6 +1,6 @@
 {
   "name": "pi-trim",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Less Pi in Pi. Strip Pi-specific identity and documentation from the system prompt in memory.",
   "type": "module",
   "license": "MIT",
@@ -25,7 +25,7 @@
     "extensions/",
     "lib/",
     "README.md",
-    "README.zh-CN.md",
+    "docs/README.zh-CN.md",
     "LICENSE",
     "CHANGELOG.md",
     "docs/migration.md"
