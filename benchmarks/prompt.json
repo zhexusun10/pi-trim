@@ -1,0 +1,11 @@
+{
+  "piVersion": "0.99.2",
+  "tokenizer": "gpt-tokenizer 4.0.0 / o200k_base",
+  "setup": "Default read/bash/edit/write snippets and guidelines; no skills, project context, or addendum. Pi install path normalized to /opt/pi; cwd /workspace. System text only; excludes tool schemas and provider wrappers.",
+  "beforeTokens": 540,
+  "afterTokens": 274,
+  "removedTokens": 266,
+  "removedPercent": 49.3,
+  "beforeCharacters": 2448,
+  "afterCharacters": 1248
+}

@@ -1,0 +1,17 @@
+name: Bug report
+description: Report a prompt transformation or compatibility problem.
+body:
+  - type: input
+    id: pi-version
+    attributes:
+      label: Pi version
+      description: Run pi --version.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction and expected behavior
+      description: Include a minimal prompt example, installation source, and pi-trim version. Remove secrets and private project instructions.
+    validations:
+      required: true
