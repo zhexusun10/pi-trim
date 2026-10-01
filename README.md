@@ -13,15 +13,15 @@ Strip Pi-specific identity and documentation from the system prompt. Keep the co
 ![Pi's default system text: 540 to 274 tokens, measured with o200k_base](https://raw.githubusercontent.com/zhexusun10/pi-trim/main/assets/before-after.png)
 
 ```bash
-pi install git:github.com/zhexusun10/pi-trim
+pi install npm:pi-trim
 ```
 
 Then start a new Pi process, or use `/reload` in an existing session.
 
-**npm status:** the package is ready; first publication is awaiting the maintainer's npm 2FA setup. After it appears on npm, use:
+GitHub installation also works:
 
 ```bash
-pi install npm:pi-trim
+pi install git:github.com/zhexusun10/pi-trim
 ```
 
 ## What changes?

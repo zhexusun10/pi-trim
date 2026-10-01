@@ -5,13 +5,13 @@
 [English](README.md) · [完整测量与方法](benchmarks/README.md)
 
 ```bash
-pi install git:github.com/zhexusun10/pi-trim
+pi install npm:pi-trim
 ```
 
-npm 包已准备好，首次发布正在等待维护者完成 npm 双重验证设置。发布后可使用：
+也可以通过 GitHub 安装：
 
 ```bash
-pi install npm:pi-trim
+pi install git:github.com/zhexusun10/pi-trim
 ```
 
 安装后重新启动 Pi，或在当前会话输入 `/reload`。
