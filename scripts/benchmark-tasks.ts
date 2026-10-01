@@ -17,6 +17,7 @@ mkdirSync(agentDir);
 symlinkSync(process.env.BENCH_AUTH_PATH ?? join(homedir(), ".pi/agent/auth.json"), join(agentDir, "auth.json"));
 writeFileSync(join(agentDir, "settings.json"), JSON.stringify({ defaultProvider: provider, defaultModel: model, enableCacheWarming: false }));
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.resolve("@earendil-works/pi-coding-agent"))), "..");
+const piVersion = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8")).version;
 const cli = join(packageRoot, "dist/bundle/cli.js");
 const extension = resolve("extensions/index.ts");
 const results: any[] = [];
@@ -70,7 +71,9 @@ async function run(task: typeof tasks[number], mode: string, repeat: number) {
   clearTimeout(timer);
   const elapsedMs = Math.round(performance.now() - started);
   const oracle = spawn(process.execPath, ["test.mjs"], { cwd, stdio: "ignore" });
+  const oracleTimer = setTimeout(() => oracle.kill("SIGTERM"), 10_000);
   const oracleExit = await new Promise<number | null>((resolve, reject) => { oracle.on("error", reject); oracle.on("close", resolve); });
+  clearTimeout(oracleTimer);
   const result = { task: task.id, mode, repeat, success: exitCode === 0 && oracleExit === 0 && readFileSync(join(cwd, "test.mjs"), "utf8") === testSource && !error,
     exitCode, elapsedMs, firstTextMs, firstOutputMs, agentStartMs,
     inputTokens: input, outputTokens, cacheReadTokens: cacheRead, cacheWriteTokens: cacheWrite,
@@ -78,7 +81,7 @@ async function run(task: typeof tasks[number], mode: string, repeat: number) {
     ...(error || exitCode !== 0 ? { error: error ?? stderr.slice(-500) } : {}) };
   console.log(`${task.id} / ${mode}: ${result.success ? "PASS" : "FAIL"}; ${elapsedMs}ms; ${result.totalInputTokens} input tokens`);
   results.push(result);
-  writeFileSync(output, JSON.stringify({ provider, model, piVersion: "0.99.2", repeats, results }, null, 2) + "\n");
+  writeFileSync(output, JSON.stringify({ provider, model, piVersion, repeats, results }, null, 2) + "\n");
   return result;
 }
 

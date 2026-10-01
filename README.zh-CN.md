@@ -5,13 +5,13 @@
 [English](README.md) · [完整测量与方法](benchmarks/README.md)
 
 ```bash
-pi install npm:pi-trim
+pi install git:github.com/zhexusun10/pi-trim
 ```
 
-也可以通过 GitHub 安装：
+npm 包已准备好，首次发布正在等待维护者完成 npm 双重验证设置。发布后可使用：
 
 ```bash
-pi install git:github.com/zhexusun10/pi-trim
+pi install npm:pi-trim
 ```
 
 安装后重新启动 Pi，或在当前会话输入 `/reload`。
@@ -40,6 +40,8 @@ Pi 0.99.2 默认系统提示词：**540 → 274 tokens，减少 266 tokens（49.
 使用 `gpt-tokenizer` 4.0.0 的 `o200k_base` 编码，默认 read/bash/edit/write 工具指引，无项目指令、skills 或附加指令。安装路径统一为 `/opt/pi`，工作目录为 `/workspace`。不包括工具 schema 和 provider 包装，也不是 API 账单数据。加入项目上下文后，节省比例通常更小。
 
 这不代表模型更聪明、延迟更低或任务成本必然更低。完整编程任务对照结果与复现命令见 [benchmark 文档](benchmarks/README.md)。
+
+实跑十个小型 JavaScript 任务（同一 `gpt-6-sol`，每组一轮）：两组均 10/10 通过，工具调用总数一致；含缓存的总输入 tokens 减少 20.7%，但 Pi 的模型价格成本估算增加 5.5%。缓存条件未控制，延迟有异常值，不据此声称性能或成本改善。
 
 ## 实现与兼容性
 

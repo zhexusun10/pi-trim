@@ -41,4 +41,24 @@ There is a 180-second timeout per run. Provider errors stop the suite; incomplet
 
 These are small synthetic coding tasks, not a production repository benchmark. One run per task cannot establish a latency or quality improvement. Provider prompt caching, shared prefixes, network variance, model nondeterminism, and test coverage all affect the comparison. For stronger claims, repeat with multiple models and real repository tasks, randomize run order, and control cache conditions.
 
-Published results from the initial run are linked below once the full suite has completed.
+## Initial coding-task results
+
+Measured on **2026-10-02**, using `openai-codex / gpt-6-sol`, Pi 0.99.2, thinking off, one paired pass per task. [Raw per-task metrics and summary](tasks-openai-codex-gpt-6-sol.json).
+
+| Metric | Default Pi | pi-trim |
+| --- | ---: | ---: |
+| Tasks passing independent verifiers | 10 / 10 | 10 / 10 |
+| Total input tokens across ten tasks, including cached input | 63,903 | 50,699 |
+| Uncached input tokens | 25,759 | 30,091 |
+| Cached-read input tokens | 38,144 | 20,608 |
+| Output tokens | 3,115 | 3,097 |
+| Median input tokens per task | 6,394 | 5,084.5 |
+| Median first text delta, from process start | 14.179 s | 13.673 s |
+| Median first output delta, including tool-call arguments | 4.968 s | 4.397 s |
+| Median total process time | 17.961 s | 17.454 s |
+| Aggregate tools: read / bash / edit / write | 20 / 20 / 8 / 2 | 20 / 20 / 8 / 2 |
+| Sum of Pi-reported model-price cost estimates | $0.090297 | $0.095274 |
+
+The treatment used **20.7% fewer total input tokens** in this suite. Both conditions passed all ten tasks and had the same aggregate tool-call counts. There was no observed change in that aggregate tool-use mix; this does not establish equivalent behavior on larger tasks.
+
+The treatment's estimated cost was **5.5% higher**, despite lower total input. Cache hits and output tokens affect cost independently of prompt size. Neither a cost saving nor a reliable latency improvement is established. Baseline LRU-cache time (127.568 s) and treatment retry time (72.535 s) were outliers. The small, single-pass suite and uncontrolled provider cache make broader performance claims premature.

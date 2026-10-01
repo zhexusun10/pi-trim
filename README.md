@@ -13,15 +13,15 @@ Strip Pi-specific identity and documentation from the system prompt. Keep the co
 ![Pi's default system text: 540 to 274 tokens, measured with o200k_base](https://raw.githubusercontent.com/zhexusun10/pi-trim/main/assets/before-after.png)
 
 ```bash
-pi install npm:pi-trim
+pi install git:github.com/zhexusun10/pi-trim
 ```
 
 Then start a new Pi process, or use `/reload` in an existing session.
 
-GitHub installation also works:
+**npm status:** the package is ready; first publication is awaiting the maintainer's npm 2FA setup. After it appears on npm, use:
 
 ```bash
-pi install git:github.com/zhexusun10/pi-trim
+pi install npm:pi-trim
 ```
 
 ## What changes?
@@ -72,6 +72,19 @@ These are tokenizer counts for the published fixture, not provider billing total
 npm ci --ignore-scripts
 npm run benchmark
 ```
+
+## Coding-task comparison
+
+A single paired pass over ten small JavaScript tasks with `openai-codex / gpt-6-sol`:
+
+| Metric | Default Pi | pi-trim |
+| --- | ---: | ---: |
+| Task success | 10 / 10 | 10 / 10 |
+| Total input tokens, including cached input | 63,903 | 50,699 (-20.7%) |
+| Median first text delta (includes CLI startup) | 14.179 s | 13.673 s |
+| Pi-reported model-price cost estimate | $0.090297 | $0.095274 (+5.5%) |
+
+Aggregate tool-call counts were identical. This run does **not** establish better latency, quality, or cost: it is small, cache state was uncontrolled, and there were timing outliers. [Raw data, full metrics, and caveats](benchmarks/README.md#initial-coding-task-results).
 
 ## How it works
 
