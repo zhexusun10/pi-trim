@@ -7,6 +7,7 @@ Strip Pi-specific identity and documentation from the system prompt. Keep the co
 [![CI](https://github.com/zhexusun10/pi-trim/actions/workflows/ci.yml/badge.svg)](https://github.com/zhexusun10/pi-trim/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/pi-trim)](https://www.npmjs.com/package/pi-trim)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Pi 1.0](https://img.shields.io/badge/Pi-1.0-blue.svg)](https://pi.dev)
 
 [简体中文](docs/README.zh-CN.md) · [Measured results](benchmarks/README.md) · [Source](extensions/index.ts)
 
@@ -58,7 +59,7 @@ The animation is an illustrated command demo, not a recording of a live model se
 
 ## Measured prompt reduction
 
-| Pi 0.99.2 default system text | Tokens |
+| Pi 1.0 default system text | Tokens |
 | --- | ---: |
 | Before | 540 |
 | After | 274 |
@@ -92,7 +93,7 @@ The extension hooks `context_with_system` before each model call. It clones reco
 
 The extension itself makes **no network requests, telemetry, model calls, file reads, or file writes**. It only transforms system messages in memory and shows reports on request. Pi's own behavior and installation operations are separate.
 
-Tested with **Pi 0.99.2** and Node.js 22.19+. The manifest follows [Pi's host-provided peer dependency convention](https://pi.dev/docs/latest/packages); it does not bundle Pi. Earlier Pi versions without `context_with_system` are unsupported. Upstream prompt changes may require new matching rules; unknown content passes through.
+Tested with **Pi 1.0** and Node.js 22.19+. The manifest follows [Pi's host-provided peer dependency convention](https://pi.dev/docs/latest/packages); it does not bundle Pi. Earlier Pi versions without `context_with_system` are unsupported. Upstream prompt changes may require new matching rules; unknown content passes through.
 
 ## Update and remove
 

@@ -35,7 +35,7 @@ pi install git:github.com/zhexusun10/pi-trim
 
 ## 实测
 
-Pi 0.99.2 默认系统提示词：**540 → 274 tokens，减少 266 tokens（49.3%）**。
+Pi 1.0 默认系统提示词：**540 → 274 tokens，减少 266 tokens（49.3%）**。
 
 使用 `gpt-tokenizer` 4.0.0 的 `o200k_base` 编码，默认 read/bash/edit/write 工具指引，无项目指令、skills 或附加指令。安装路径统一为 `/opt/pi`，工作目录为 `/workspace`。不包括工具 schema 和 provider 包装，也不是 API 账单数据。加入项目上下文后，节省比例通常更小。
 
@@ -47,7 +47,7 @@ Pi 0.99.2 默认系统提示词：**540 → 274 tokens，减少 266 tokens（49.
 
 只在内存中处理发给模型的系统消息，使用 `context_with_system` 钩子。扩展本身没有网络请求、遥测、模型调用或文件读写，也不会改写 Pi 安装目录。Pi 自身的行为不受此声明约束。
 
-已测试 Pi 0.99.2，Node.js 22.19+。没有 `context_with_system` 接口的旧版本不支持。项目以英文文档为主，这份中文说明为次选。
+已测试 Pi 1.0，Node.js 22.19+。没有 `context_with_system` 接口的旧版本不支持。项目以英文文档为主，这份中文说明为次选。
 
 ```bash
 pi update npm:pi-trim
