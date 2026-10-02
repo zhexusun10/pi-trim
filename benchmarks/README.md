@@ -4,7 +4,7 @@
 
 Run `npm ci --ignore-scripts` and `npm run benchmark`.
 
-The harness imports the prompt builder and built-in tool contributions from a fresh npm installation of Pi 0.99.2. It generates the default read/bash/edit/write prompt, normalizes the installation directory to `/opt/pi` and the working directory to `/workspace`, then runs the exact transformer used by the extension.
+The harness imports the prompt builder and built-in tool contributions from a fresh npm installation of Pi 1.0. It generates the default read/bash/edit/write prompt, normalizes the installation directory to `/opt/pi` and the working directory to `/workspace`, then runs the exact transformer used by the extension.
 
 | Metric | Default Pi | pi-trim |
 | --- | ---: | ---: |
@@ -43,7 +43,7 @@ These are small synthetic coding tasks, not a production repository benchmark. O
 
 ## Initial coding-task results
 
-Measured on **2026-10-02**, using `openai-codex / gpt-6-sol`, Pi 0.99.2, thinking off, one paired pass per task. [Raw per-task metrics and summary](tasks-openai-codex-gpt-6-sol.json).
+Measured on **2026-10-02**, using `openai-codex / gpt-6-sol`, Pi 1.0, thinking off, one paired pass per task. [Raw per-task metrics and summary](tasks-openai-codex-gpt-6-sol.json).
 
 | Metric | Default Pi | pi-trim |
 | --- | ---: | ---: |

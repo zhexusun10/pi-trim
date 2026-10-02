@@ -2,7 +2,7 @@
   "runDate": "2026-10-02",
   "provider": "openai-codex",
   "model": "gpt-6-sol",
-  "piVersion": "0.99.2",
+  "piVersion": "1.0",
   "repeats": 1,
   "results": [
     {
@@ -446,7 +446,7 @@
       }
     }
   ],
-  "setup": "Single paired pass; sequential alternating order; thinking off; fresh unmodified Pi 0.99.2 npm CLI; isolated config/task directories; no discovered extensions, skills, or context; same provider account. Provider cache state is not controlled. Client timings include CLI startup. Pi-reported cost is a model-price estimate, not a subscription bill.",
+  "setup": "Single paired pass; sequential alternating order; thinking off; fresh unmodified Pi 1.0 npm CLI; isolated config/task directories; no discovered extensions, skills, or context; same provider account. Provider cache state is not controlled. Client timings include CLI startup. Pi-reported cost is a model-price estimate, not a subscription bill.",
   "summary": {
     "baseline": {
       "tasks": 10,
