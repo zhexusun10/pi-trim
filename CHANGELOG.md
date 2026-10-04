@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1
+
+- Update package description and discoverability keywords (`pi-coding-agent`, `context`, `token-optimization`).
+- Provide standard MP4 video (`assets/demo.mp4`) in Pi Gallery metadata (`pi.video`).
+
 ## 0.2.0
 
 - **Pi 1.0 compatibility**: Verified and tested with Pi 1.0.

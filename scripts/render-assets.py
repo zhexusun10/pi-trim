@@ -65,3 +65,18 @@ for lines in screens:
     draw.text((54, 712), "Pi 1.0 / no project context / excludes tool schemas", font=font(17), fill=MUTED)
     frames.append(frame)
 frames[0].save(ROOT / "assets/demo.gif", save_all=True, append_images=frames[1:], duration=[2500, 6500, 4000], loop=0, optimize=True)
+
+import shutil
+import subprocess
+
+if shutil.which("ffmpeg"):
+    gif_path = ROOT / "assets/demo.gif"
+    mp4_path = ROOT / "assets/demo.mp4"
+    subprocess.run([
+        "ffmpeg", "-y", "-i", str(gif_path),
+        "-movflags", "faststart",
+        "-pix_fmt", "yuv420p",
+        "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",
+        str(mp4_path)
+    ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+

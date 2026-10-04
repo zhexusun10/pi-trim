@@ -1,7 +1,7 @@
 {
   "name": "pi-trim",
-  "version": "0.2.0",
-  "description": "Less Pi in Pi. Strip Pi-specific identity and documentation from the system prompt in memory.",
+  "version": "0.2.1",
+  "description": "Pi coding agent extension that trims Pi-specific identity and documentation from the system prompt to reduce context usage.",
   "type": "module",
   "license": "MIT",
   "author": "Jerry (zhexusun10)",
@@ -16,10 +16,13 @@
   "keywords": [
     "pi-package",
     "pi",
-    "pi-agent",
+    "pi-coding-agent",
     "pi-extension",
     "coding-agent",
-    "system-prompt"
+    "system-prompt",
+    "context",
+    "context-management",
+    "token-optimization"
   ],
   "files": [
     "extensions/",
@@ -35,7 +38,7 @@
       "./extensions/index.ts"
     ],
     "image": "https://raw.githubusercontent.com/zhexusun10/pi-trim/main/assets/before-after.png",
-    "video": "https://raw.githubusercontent.com/zhexusun10/pi-trim/main/assets/demo.gif"
+    "video": "https://raw.githubusercontent.com/zhexusun10/pi-trim/main/assets/demo.mp4"
   },
   "engines": {
     "node": ">=22.19.0"
