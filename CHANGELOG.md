@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.2
+
+- Support the Pi 1.5.0 default identity while preserving compatibility with the previous wording.
+- Test Pi 1.0.0, 1.4.0, and 1.5.0 prompt generation and CLI requests using a local faux provider.
+- Refresh the prompt benchmark and illustrated demo using Pi 1.5.0.
+
 ## 0.2.1
 
 - Update package description and discoverability keywords (`pi-coding-agent`, `context`, `token-optimization`).

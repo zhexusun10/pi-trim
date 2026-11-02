@@ -1,6 +1,6 @@
 {
   "name": "pi-trim",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Pi coding agent extension that trims Pi-specific identity and documentation from the system prompt to reduce context usage.",
   "type": "module",
   "license": "MIT",
@@ -48,8 +48,8 @@
     "@earendil-works/pi-ai": "*"
   },
   "devDependencies": {
-    "@earendil-works/pi-coding-agent": "1.0.0",
-    "@earendil-works/pi-ai": "1.0.0",
+    "@earendil-works/pi-coding-agent": "1.5.0",
+    "@earendil-works/pi-ai": "1.5.0",
     "@types/node": "^22.0.0",
     "gpt-tokenizer": "4.0.0",
     "tsx": "4.23.15",

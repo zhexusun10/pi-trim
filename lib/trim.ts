@@ -6,15 +6,24 @@ export interface Change {
   after: string;
 }
 
-const identity = "You are an expert coding assistant operating inside pi, a coding agent harness.";
-const replacement = "You are an expert coding assistant.";
+const identityReplacements = [
+  {
+    before: "You are an expert coding assistant operating inside pi, a coding agent harness.",
+    after: "You are an expert coding assistant.",
+  },
+  {
+    before: "You are a coding assistant running inside pi, a coding agent harness.",
+    after: "You are a coding assistant.",
+  },
+];
 const environmentRule = /^- You can inspect PI_\* environment variables for current model and session details\.?\r?\n?/gm;
 const docsPrefix = /^\s*(?:<docs>\s*)?Pi documentation \(read only/;
 
 function trimPreamble(text: string, changes: Change[]): string {
-  if (!text.startsWith(identity)) return text;
-  changes.push({ section: "Pi identity", before: identity, after: replacement });
-  return replacement + text.slice(identity.length);
+  const identity = identityReplacements.find(({ before }) => text.startsWith(before));
+  if (!identity) return text;
+  changes.push({ section: "Pi identity", ...identity });
+  return identity.after + text.slice(identity.before.length);
 }
 
 function trimRules(text: string, changes: Change[]): string {

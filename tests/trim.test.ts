@@ -6,6 +6,8 @@ import piTrim from "../extensions/index.ts";
 import { trimSystemMessage, trimText, formatStatus, formatDiff, type Change } from "../lib/trim.ts";
 
 const identity = "You are an expert coding assistant operating inside pi, a coding agent harness.";
+const newIdentity = "You are a coding assistant running inside pi, a coding agent harness.";
+const newPreamble = `${newIdentity} Help users inspect files, run commands, and modify code.`;
 const docs = "<docs>\nPi documentation (read only when the user asks about pi itself):\n- Main documentation: /opt/pi/README.md\n</docs>";
 const rule = "- You can inspect PI_* environment variables for current model and session details.";
 const fixture = (): SystemMessage => ({
@@ -32,6 +34,49 @@ test("removes only recognized boilerplate while preserving instructions and tool
   assert.equal(changes.length, 3);
 });
 
+for (const { version, identity: before, replacement, preamble } of [
+  {
+    version: "Pi 1.4.0",
+    identity,
+    replacement: "You are an expert coding assistant.",
+    preamble: `${identity} You help users by reading files, executing commands, editing code, and writing new files.`,
+  },
+  {
+    version: "Pi 1.5.0",
+    identity: newIdentity,
+    replacement: "You are a coding assistant.",
+    preamble: newPreamble,
+  },
+]) {
+  test(`trims the ${version} preamble in every system message representation`, () => {
+    const expected = replacement + preamble.slice(before.length);
+    const change: Change = { section: "Pi identity", before, after: replacement };
+    const textChanges: Change[] = [];
+    assert.equal(trimText(preamble, textChanges), expected);
+    assert.deepEqual(textChanges, [change]);
+    assert.equal(formatDiff(textChanges), `--- Pi identity\n- ${before}\n+ ${replacement}`);
+
+    const messages: SystemMessage[] = [
+      { role: "system", content: preamble, timestamp: 0 },
+      { role: "system", content: [{ type: "text", text: preamble }], timestamp: 0 },
+      { role: "system", content: "", sections: { preamble }, timestamp: 0 },
+    ];
+    const expectedContents = [expected, [{ type: "text", text: expected }], ""];
+    for (const [index, message] of messages.entries()) {
+      const original = structuredClone(message);
+      const changes: Change[] = [];
+      const result = trimSystemMessage(message, changes);
+      assert.deepEqual(result.content, expectedContents[index]);
+      if (message.sections) assert.equal(result.sections?.preamble, expected);
+      assert.deepEqual(changes, [change]);
+      assert.deepEqual(message, original);
+      const repeatedChanges: Change[] = [];
+      assert.deepEqual(trimSystemMessage(result, repeatedChanges), result);
+      assert.deepEqual(repeatedChanges, []);
+    }
+  });
+}
+
 test("retains null section deletions and tool additions/removals in mid-session updates", () => {
   const update: SystemMessage = { role: "system", content: "", timestamp: 2, sections: { docs, skills: null }, toolsRemoved: [{ name: "bash" }] };
   const result = trimSystemMessage(update);
@@ -42,6 +87,23 @@ test("retains null section deletions and tool additions/removals in mid-session 
 test("unknown docs, preambles, environment rules, and section names pass through", () => {
   const message: SystemMessage = { role: "system", content: "Do not remove pi, docs, or PI_*.", timestamp: 0,
     sections: { docs: "<docs>\nProduct documentation\n</docs>", preamble: "Custom " + identity, rules: "- Preserve PI_* values", custom: docs } };
+  assert.deepEqual(trimSystemMessage(message), message);
+});
+
+test("new identity matching remains limited to an exact preamble prefix", () => {
+  for (const text of [
+    `Custom ${newPreamble}`,
+    `\n${newPreamble}`,
+    newPreamble.replace("running inside pi", "running outside pi"),
+    newPreamble.replace("a coding agent harness", "a custom agent harness"),
+    `<project_context>\n${newPreamble}\n</project_context>`,
+  ]) {
+    const changes: Change[] = [];
+    assert.equal(trimText(text, changes), text);
+    assert.deepEqual(changes, []);
+  }
+  const message: SystemMessage = { role: "system", content: "", timestamp: 0,
+    sections: { preamble: `Custom ${newPreamble}`, project_context: newPreamble, addendum: newPreamble } };
   assert.deepEqual(trimSystemMessage(message), message);
 });
 
@@ -93,6 +155,31 @@ test("extension handles all system updates and leaves user/tool messages untouch
   handlers.get("session_start")!({});
   await commands.get("pi-trim").handler("status", ctx);
   assert.match(notifications.pop()!, /Preview/);
+});
+
+test("extension trims the new identity and reports it in request and preview diffs", async () => {
+  const handlers = new Map<string, (event: any) => any>();
+  const commands = new Map<string, any>();
+  piTrim({ on: (name: string, handler: any) => handlers.set(name, handler), registerCommand: (name: string, command: any) => commands.set(name, command) } as unknown as ExtensionAPI);
+  const system: SystemMessage = { role: "system", content: "", timestamp: 0,
+    sections: { preamble: newPreamble, project_context: newPreamble } };
+  const user = { role: "user", content: newPreamble, timestamp: 0 };
+  const result = handlers.get("context_with_system")!({ messages: [system, user] });
+  assert.equal(result.messages[0].sections.preamble, "You are a coding assistant. Help users inspect files, run commands, and modify code.");
+  assert.equal(result.messages[0].sections.project_context, newPreamble);
+  assert.equal(system.sections?.preamble, newPreamble);
+  assert.strictEqual(result.messages[1], user);
+
+  const notifications: string[] = [];
+  const ctx = { hasUI: true, ui: { notify: (text: string) => notifications.push(text) }, getSystemPrompt: () => newPreamble };
+  const expectedDiff = `--- Pi identity\n- ${newIdentity}\n+ You are a coding assistant.`;
+  await commands.get("pi-trim").handler("diff", ctx);
+  assert.equal(notifications.pop(), expectedDiff);
+  await commands.get("pi-trim").handler("status", ctx);
+  assert.match(notifications.pop()!, /Changed sections: Pi identity/);
+  handlers.get("session_start")!({});
+  await commands.get("pi-trim").handler("diff", ctx);
+  assert.equal(notifications.pop(), expectedDiff);
 });
 
 test("reports estimates explicitly and never divides by zero", () => {

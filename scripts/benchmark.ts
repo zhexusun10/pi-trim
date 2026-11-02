@@ -3,7 +3,7 @@ import { dirname, resolve } from "node:path";
 import { pathToFileURL, fileURLToPath } from "node:url";
 import { writeFileSync, mkdirSync } from "node:fs";
 import { encode } from "gpt-tokenizer/encoding/o200k_base";
-import { trimSystemMessage, systemText } from "../lib/trim.ts";
+import { trimSystemMessage, systemText, type Change } from "../lib/trim.ts";
 
 const require = createRequire(import.meta.url);
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.resolve("@earendil-works/pi-coding-agent"))), "..");
@@ -19,7 +19,8 @@ for (const name of ["read", "bash", "edit", "write"]) {
 const sections = buildSystemPromptSections({ cwd: "/workspace", toolSnippets, toolGuidelines });
 for (const key of Object.keys(sections)) sections[key] = sections[key].replaceAll(packageRoot, "/opt/pi");
 const original = { role: "system" as const, content: "", sections, timestamp: 0 };
-const trimmed = trimSystemMessage(original);
+const changes: Change[] = [];
+const trimmed = trimSystemMessage(original, changes);
 const before = systemText(original);
 const after = systemText(trimmed);
 const beforeTokens = encode(before).length;
@@ -31,6 +32,7 @@ const result = {
   beforeTokens, afterTokens, removedTokens: beforeTokens - afterTokens,
   removedPercent: Number(((beforeTokens - afterTokens) / beforeTokens * 100).toFixed(1)),
   beforeCharacters: [...before].length, afterCharacters: [...after].length,
+  changedSections: [...new Set(changes.map((change) => change.section))],
 };
 mkdirSync("benchmarks", { recursive: true });
 writeFileSync("benchmarks/prompt.json", JSON.stringify(result, null, 2) + "\n");

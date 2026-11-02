@@ -4,26 +4,33 @@
 
 Strip Pi-specific identity and documentation from the system prompt. Keep the coding assistant, tools, and your instructions.
 
+**Compatible with Pi 1.5.0**, including its new default preamble. Older supported Pi versions still work.
+
 [![CI](https://github.com/zhexusun10/pi-trim/actions/workflows/ci.yml/badge.svg)](https://github.com/zhexusun10/pi-trim/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/pi-trim)](https://www.npmjs.com/package/pi-trim)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Pi 1.0](https://img.shields.io/badge/Pi-1.0-blue.svg)](https://pi.dev)
+[![Pi 1.5.0](https://img.shields.io/badge/Pi-1.5.0-blue.svg)](https://pi.dev)
 
 [简体中文](docs/README.zh-CN.md) · [Measured results](benchmarks/README.md) · [Source](extensions/index.ts)
 
-![Pi's default system text: 540 to 274 tokens, measured with o200k_base](https://raw.githubusercontent.com/zhexusun10/pi-trim/main/assets/before-after.png)
+![Pi 1.5.0 default system text: 459 to 199 tokens, measured with o200k_base](https://raw.githubusercontent.com/zhexusun10/pi-trim/main/assets/before-after.png)
 
-```bash
-pi install npm:pi-trim
-```
+## Install
 
-Then start a new Pi process, or use `/reload` in an existing session.
-
-GitHub installation also works:
+The Pi 1.5.0 compatibility fix is available now from GitHub:
 
 ```bash
 pi install git:github.com/zhexusun10/pi-trim
 ```
+
+The fix is prepared for npm as **pi-trim 0.2.2**. Once 0.2.2 is published, install or update the npm package with:
+
+```bash
+pi install npm:pi-trim
+# Existing npm installation: pi update npm:pi-trim
+```
+
+Then start a new Pi process, or use `/reload` in an existing session.
 
 ## What changes?
 
@@ -34,6 +41,7 @@ Pi already keeps its default prompt small. This package removes three recognizab
 | Before | After |
 | --- | --- |
 | `You are an expert coding assistant operating inside pi, a coding agent harness.` | `You are an expert coding assistant.` |
+| `You are a coding assistant running inside pi, a coding agent harness.` (introduced in Pi 1.5.0) | `You are a coding assistant.` |
 | Pi's `<docs>` section: pointers to its README, SDK, extensions, themes, skills, and TUI documentation | Removed from the provider-bound system messages |
 | The exact rule telling the model to inspect `PI_*` environment variables | Removed |
 
@@ -59,11 +67,11 @@ The animation is an illustrated command demo, not a recording of a live model se
 
 ## Measured prompt reduction
 
-| Pi 1.0 default system text | Tokens |
+| Pi 1.5.0 default system text | Tokens |
 | --- | ---: |
-| Before | 540 |
-| After | 274 |
-| Removed | **266 (49.3%)** |
+| Before | 459 |
+| After | 199 |
+| Removed | **260 (56.6%)** |
 
 Measured using `gpt-tokenizer` 4.0.0, `o200k_base`, with default read/bash/edit/write tool snippets and guidelines. Installation paths are normalized to `/opt/pi`, and the working directory to `/workspace`. No project instructions, skills, or addenda. Tool schemas and provider formatting are excluded.
 
@@ -76,7 +84,7 @@ npm run benchmark
 
 ## Coding-task comparison
 
-A single paired pass over ten small JavaScript tasks with `openai-codex / gpt-6-sol`:
+A historical single paired pass using Pi 1.0 over ten small JavaScript tasks with `openai-codex / gpt-6-sol`:
 
 | Metric | Default Pi | pi-trim |
 | --- | ---: | ---: |
@@ -93,16 +101,18 @@ The extension hooks `context_with_system` before each model call. It clones reco
 
 The extension itself makes **no network requests, telemetry, model calls, file reads, or file writes**. It only transforms system messages in memory and shows reports on request. Pi's own behavior and installation operations are separate.
 
-Tested with **Pi 1.0** and Node.js 22.19+. The manifest follows [Pi's host-provided peer dependency convention](https://pi.dev/docs/latest/packages); it does not bundle Pi. Earlier Pi versions without `context_with_system` are unsupported. Upstream prompt changes may require new matching rules; unknown content passes through.
+The generated default prompts of **Pi 1.0.0, 1.4.0, and 1.5.0** are tested with Node.js 22.19+. The manifest follows [Pi's host-provided peer dependency convention](https://pi.dev/docs/latest/packages); it does not bundle Pi. Earlier Pi versions without `context_with_system` are unsupported. Upstream prompt changes may require new matching rules; unknown content passes through.
 
 ## Update and remove
 
+For the GitHub version:
+
 ```bash
-pi update npm:pi-trim
-pi remove npm:pi-trim
+pi update git:github.com/zhexusun10/pi-trim
+pi remove git:github.com/zhexusun10/pi-trim
 ```
 
-For a GitHub install, use `git:github.com/zhexusun10/pi-trim` as the source instead. Restart Pi or run `/reload` after removal.
+For an npm installation, use `npm:pi-trim` instead. Update to 0.2.2 or later once it is published. Restart Pi or run `/reload` after removal.
 
 Migrating from the old `strip-pi-docs.ts` script? See the [migration guide](docs/migration.md), especially if it previously patched your Pi installation.
 
@@ -116,7 +126,7 @@ npm run benchmark
 pi -e .
 ```
 
-No build step or runtime dependencies. Pi loads the TypeScript extension directly. Tests cover preservation of project context, tools, custom sections, text blocks, and mid-session updates.
+No build step or runtime dependencies. Pi loads the TypeScript extension directly. Tests cover preservation of project context, tools, custom sections, text blocks, and mid-session updates. CI also checks real Pi-generated prompts and sends a request through the Pi CLI to a local faux provider, without network access or model credentials.
 
 For real coding-task comparisons, see [benchmarks/README.md](benchmarks/README.md). Contributions and bug reports are welcome; include the Pi version and a minimal prompt example with private content removed.
 
