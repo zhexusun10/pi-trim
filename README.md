@@ -2,9 +2,9 @@
 
 **Less Pi in Pi.**
 
-Strip Pi-specific identity and documentation from the system prompt. Keep the coding assistant, tools, and your instructions.
+Strip Pi-specific identity and documentation from the system prompt—and optionally Pi's `<tools>` summary list with `/pi-trim mode`—while keeping the coding assistant, tool schemas, `<rules>`, and your instructions intact.
 
-**Compatible with Pi 1.5.0**, including its new default preamble. Older supported Pi versions still work.
+**Compatible with Pi 1.5.0** and earlier supported Pi versions (`1.0.0`, `1.4.0`). Cuts Pi 1.5.0 default system text by **56.6%** (`459 → 199` tokens) in `default` mode and **70.4%** (`459 → 136` tokens) in `aggressive` mode.
 
 [![CI](https://github.com/zhexusun10/pi-trim/actions/workflows/ci.yml/badge.svg)](https://github.com/zhexusun10/pi-trim/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/pi-trim)](https://www.npmjs.com/package/pi-trim)
@@ -17,26 +17,27 @@ Strip Pi-specific identity and documentation from the system prompt. Keep the co
 
 ## Install
 
-The Pi 1.5.0 compatibility fix is available now from GitHub:
+Install from npm:
+
+```bash
+pi install npm:pi-trim
+# Update an existing npm installation:
+pi update npm:pi-trim
+```
+
+Or install directly from GitHub:
 
 ```bash
 pi install git:github.com/zhexusun10/pi-trim
 ```
 
-The fix is prepared for npm as **pi-trim 0.2.2**. Once 0.2.2 is published, install or update the npm package with:
-
-```bash
-pi install npm:pi-trim
-# Existing npm installation: pi update npm:pi-trim
-```
-
-Then start a new Pi process, or use `/reload` in an existing session.
+Then start a new Pi process, or run `/reload` in an existing session.
 
 ## What changes?
 
 What happens if Pi knows less about Pi?
 
-Pi already keeps its default prompt small. This package removes three recognizable pieces of its own boilerplate:
+Pi already keeps its default prompt small. In `default` mode, `pi-trim` removes three recognizable pieces of Pi's own boilerplate:
 
 | Before | After |
 | --- | --- |
@@ -47,17 +48,21 @@ Pi already keeps its default prompt small. This package removes three recognizab
 
 Tool descriptions and schemas, other rules, project instructions, skills, addenda, custom sections, and conversation messages remain intact. A user-defined docs section with different contents is preserved. This is a targeted transformation, not a filter for every occurrence of `pi` or `docs`.
 
+Need even leaner prompts? Run `/pi-trim mode` to switch to `aggressive` mode, which also removes Pi's `<tools>` summary list (including `Additional tools may be available.`) from the system prompt because tool names, descriptions, and schemas are already declared via the API's tool definitions. `<rules>` and custom `<tools>` sections with non-Pi contents are preserved.
+
 You can still ask the model about Pi, but its automatic documentation pointers are gone. Provide the relevant paths or links yourself when doing Pi SDK or extension work.
 
-## Inspect it
+## Inspect and configure
 
 ```text
 /pi-trim
 /pi-trim status
 /pi-trim diff
+/pi-trim mode
+/pi-trim mode default|aggressive
 ```
 
-`status` reports original and remaining character counts, a **chars / 4 token estimate**, and changed sections. `diff` shows the exact removed or replaced text.
+`status` reports the active mode (`default` or `aggressive`), original and remaining character counts, a **chars / 4 token estimate**, and changed sections. `diff` shows the exact removed or replaced text. `/pi-trim mode` toggles between `default` and `aggressive` (or sets the named mode directly) and persists the selection for the current session branch.
 
 Before the first model request, the command previews the base prompt. Afterwards, it describes the system text in the most recent request, including system-message updates. Tool schemas are excluded. Other extensions running later can change that request again.
 
@@ -70,8 +75,8 @@ The animation is an illustrated command demo, not a recording of a live model se
 | Pi 1.5.0 default system text | Tokens |
 | --- | ---: |
 | Before | 459 |
-| After | 199 |
-| Removed | **260 (56.6%)** |
+| After (`default` mode) | 199 (-56.6%) |
+| After (`aggressive` mode, also strips `<tools>`) | **136 (-70.4%)** |
 
 Measured using `gpt-tokenizer` 4.0.0, `o200k_base`, with default read/bash/edit/write tool snippets and guidelines. Installation paths are normalized to `/opt/pi`, and the working directory to `/workspace`. No project instructions, skills, or addenda. Tool schemas and provider formatting are excluded.
 
@@ -105,14 +110,21 @@ The generated default prompts of **Pi 1.0.0, 1.4.0, and 1.5.0** are tested with 
 
 ## Update and remove
 
-For the GitHub version:
+For npm installations:
+
+```bash
+pi update npm:pi-trim
+pi remove npm:pi-trim
+```
+
+For GitHub installations:
 
 ```bash
 pi update git:github.com/zhexusun10/pi-trim
 pi remove git:github.com/zhexusun10/pi-trim
 ```
 
-For an npm installation, use `npm:pi-trim` instead. Update to 0.2.2 or later once it is published. Restart Pi or run `/reload` after removal.
+Restart Pi or run `/reload` after updating or removing.
 
 Migrating from the old `strip-pi-docs.ts` script? See the [migration guide](docs/migration.md), especially if it previously patched your Pi installation.
 

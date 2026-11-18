@@ -21,10 +21,14 @@ for (const key of Object.keys(sections)) sections[key] = sections[key].replaceAl
 const original = { role: "system" as const, content: "", sections, timestamp: 0 };
 const changes: Change[] = [];
 const trimmed = trimSystemMessage(original, changes);
+const aggressiveChanges: Change[] = [];
+const aggressiveTrimmed = trimSystemMessage(original, aggressiveChanges, { mode: "aggressive" });
 const before = systemText(original);
 const after = systemText(trimmed);
+const aggressiveAfter = systemText(aggressiveTrimmed);
 const beforeTokens = encode(before).length;
 const afterTokens = encode(after).length;
+const aggressiveAfterTokens = encode(aggressiveAfter).length;
 const result = {
   piVersion: require(resolve(packageRoot, "package.json")).version,
   tokenizer: "gpt-tokenizer 4.0.0 / o200k_base",
@@ -33,6 +37,11 @@ const result = {
   removedPercent: Number(((beforeTokens - afterTokens) / beforeTokens * 100).toFixed(1)),
   beforeCharacters: [...before].length, afterCharacters: [...after].length,
   changedSections: [...new Set(changes.map((change) => change.section))],
+  aggressiveAfterTokens,
+  aggressiveRemovedTokens: beforeTokens - aggressiveAfterTokens,
+  aggressiveRemovedPercent: Number(((beforeTokens - aggressiveAfterTokens) / beforeTokens * 100).toFixed(1)),
+  aggressiveAfterCharacters: [...aggressiveAfter].length,
+  aggressiveChangedSections: [...new Set(aggressiveChanges.map((change) => change.section))],
 };
 mkdirSync("benchmarks", { recursive: true });
 writeFileSync("benchmarks/prompt.json", JSON.stringify(result, null, 2) + "\n");

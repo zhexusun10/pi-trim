@@ -1,6 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import type { SystemMessage } from "@earendil-works/pi-ai";
+import {
+  collapseSystemMessages,
+  getSystemMessageText,
+  renderSystemMessageUpdate,
+  type SystemMessage,
+  type TranscriptContext,
+} from "@earendil-works/pi-ai";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import piTrim from "../extensions/index.ts";
 import { trimSystemMessage, trimText, formatStatus, formatDiff, type Change } from "../lib/trim.ts";
@@ -182,8 +188,208 @@ test("extension trims the new identity and reports it in request and preview dif
   assert.equal(notifications.pop(), expectedDiff);
 });
 
+const pi15Tools = [
+  "<tools>",
+  "- read: Read file contents",
+  "- bash: Execute bash commands (ls, grep, find, etc.)",
+  "",
+  "Additional tools may be available.",
+  "</tools>",
+].join("\n");
+const pi14Tools = [
+  "<tools>",
+  "- read: Read file contents",
+  "",
+  "In addition to the tools above, you may have access to other custom tools depending on the project.",
+  "</tools>",
+].join("\n");
+const piEmptyTools = "<tools>\n(none)\n\nAdditional tools may be available.\n</tools>";
+
+test("aggressive mode strips recognized Pi tools sections across Pi versions while keeping tool declarations", () => {
+  for (const toolsSection of [pi15Tools, pi14Tools, piEmptyTools]) {
+    const message: SystemMessage = {
+      ...fixture(),
+      sections: { ...fixture().sections, tools: toolsSection },
+    };
+    const original = structuredClone(message);
+    const changes: Change[] = [];
+    const result = trimSystemMessage(message, changes, { mode: "aggressive" });
+    assert.equal(result.sections?.tools, null);
+    assert.equal(result.sections?.docs, null);
+    assert.equal(result.sections?.rules, "<rules>\n- Keep tests\n- Be concise\n</rules>");
+    assert.strictEqual(result.toolsAdded, message.toolsAdded);
+    assert.deepEqual(message, original);
+    assert.ok(changes.some((change) => change.section === "Pi tools list" && change.before === toolsSection));
+    const repeatedChanges: Change[] = [];
+    assert.deepEqual(trimSystemMessage(result, repeatedChanges, { mode: "aggressive" }), result);
+    assert.deepEqual(repeatedChanges, []);
+  }
+});
+
+test("aggressive mode trims recognized XML and legacy tools blocks in plain text without breaking spacing", () => {
+  const xmlPrompt = [newPreamble, pi15Tools, `<rules>\n${rule}\n- Be concise\n</rules>`, docs, "<cwd>\n/workspace\n</cwd>"].join("\n\n");
+  const xmlChanges: Change[] = [];
+  assert.equal(
+    trimText(xmlPrompt, xmlChanges, { mode: "aggressive" }),
+    "You are a coding assistant. Help users inspect files, run commands, and modify code.\n\n<rules>\n- Be concise\n</rules>\n\n<cwd>\n/workspace\n</cwd>",
+  );
+  assert.deepEqual(xmlChanges.map((change) => change.section), ["Pi identity", "Pi tools list", "Pi environment rule", "Pi documentation"]);
+
+  const singleNewlinePrompt = `${pi15Tools}\n<rules>\n- Be concise\n</rules>`;
+  assert.equal(trimText(singleNewlinePrompt, [], { mode: "aggressive" }), "<rules>\n- Be concise\n</rules>");
+
+  const trailingTools = "You are a coding assistant.\n\n" + pi15Tools + "\n";
+  assert.equal(trimText(trailingTools, [], { mode: "aggressive" }), "You are a coding assistant.");
+
+  const legacyPrompt = [
+    identity,
+    "",
+    "Available tools:\n- read: Read file contents\n\nIn addition to the tools above, you may have access to other custom tools depending on the project.",
+    "",
+    `Guidelines:\n${rule}\n- Be concise`,
+    "",
+    "Pi documentation (read only when asked):\n- Main docs: /pi",
+  ].join("\n");
+  assert.equal(
+    trimText(legacyPrompt, [], { mode: "aggressive" }),
+    "You are an expert coding assistant.\n\nGuidelines:\n- Be concise\n\n",
+  );
+});
+
+test("aggressive mode preserves custom and nested tools sections", () => {
+  const customMessage = fixture(); // sections.tools is "<tools>\nread, bash, edit, write\n</tools>"
+  const changes: Change[] = [];
+  const result = trimSystemMessage(customMessage, changes, { mode: "aggressive" });
+  assert.equal(result.sections?.tools, customMessage.sections?.tools);
+  assert.ok(!changes.some((change) => change.section === "Pi tools list"));
+
+  const nestedText = [
+    newPreamble,
+    pi15Tools,
+    `<project_context>\n${pi15Tools}\n</project_context>`,
+    `<addendum>\n${pi14Tools}\n</addendum>`,
+  ].join("\n\n");
+  const trimmedNested = trimText(nestedText, [], { mode: "aggressive" });
+  assert.ok(trimmedNested.includes(`<project_context>\n${pi15Tools}\n</project_context>`));
+  assert.ok(trimmedNested.includes(`<addendum>\n${pi14Tools}\n</addendum>`));
+  assert.equal(trimmedNested.indexOf(pi15Tools), trimmedNested.indexOf("<project_context>") + "<project_context>\n".length);
+});
+
+test("/pi-trim mode toggles and sets modes, updates previews and requests, and restores from session branch", async () => {
+  const handlers = new Map<string, (event: any, ctx?: any) => any>();
+  const commands = new Map<string, any>();
+  const entries: Array<{ type: string; customType: string; data: unknown }> = [];
+  piTrim({
+    on: (name: string, handler: any) => handlers.set(name, handler),
+    registerCommand: (name: string, command: any) => commands.set(name, command),
+    appendEntry: (customType: string, data: unknown) => {
+      entries.push({ type: "custom", customType, data });
+    },
+  } as unknown as ExtensionAPI);
+
+  const cmd = commands.get("pi-trim");
+  assert.deepEqual(cmd.getArgumentCompletions("")?.map((item: any) => item.value), ["status", "diff", "mode"]);
+  assert.deepEqual(cmd.getArgumentCompletions("mode ")?.map((item: any) => item.value), ["mode default", "mode aggressive"]);
+  assert.deepEqual(cmd.getArgumentCompletions("mode a")?.map((item: any) => item.value), ["mode aggressive"]);
+  assert.equal(cmd.getArgumentCompletions("status "), null);
+
+  const notifications: Array<{ text: string; level?: string }> = [];
+  const basePrompt = [newPreamble, pi15Tools, docs].join("\n\n");
+  const branchEntries = () => entries;
+  const ctx = {
+    hasUI: true,
+    ui: { notify: (text: string, level?: string) => notifications.push({ text, level }) },
+    getSystemPrompt: () => basePrompt,
+    sessionManager: { getBranch: branchEntries },
+  };
+
+  // Run a request in default mode first so snapshot is populated.
+  const system: SystemMessage = { role: "system", content: "", timestamp: 0, sections: { preamble: newPreamble, tools: pi15Tools, docs } };
+  const defaultRes = handlers.get("context_with_system")!({ messages: [system] }, ctx);
+  assert.equal(defaultRes.messages[0].sections.tools, pi15Tools);
+  assert.equal(defaultRes.messages[0].sections.docs, null);
+
+  // Toggle mode -> aggressive: invalidates stale snapshot immediately and persists entry.
+  await cmd.handler("mode", ctx);
+  assert.match(notifications.pop()!.text, /mode set to aggressive/);
+  assert.deepEqual(entries.at(-1), { type: "custom", customType: "pi-trim-mode", data: { mode: "aggressive" } });
+
+  await cmd.handler("status", ctx);
+  const statusAfterToggle = notifications.pop()!.text;
+  assert.match(statusAfterToggle, /Mode: aggressive/);
+  assert.match(statusAfterToggle, /Preview/);
+  assert.match(statusAfterToggle, /Pi tools list/);
+
+  // Explicit mode same as current notifies without appending duplicate entry.
+  const countBeforeNoop = entries.length;
+  await cmd.handler("mode aggressive", ctx);
+  assert.match(notifications.pop()!.text, /already aggressive/);
+  assert.equal(entries.length, countBeforeNoop);
+
+  // Invalid mode argument warns without changing mode.
+  await cmd.handler("mode invalid", ctx);
+  assert.equal(notifications.at(-1)!.level, "warning");
+  assert.match(notifications.pop()!.text, /Usage: \/pi-trim mode/);
+
+  // Next request in aggressive mode strips <tools> including "Additional tools may be available."
+  // and suppresses redundant mid-session tools updates without dropping tool additions.
+  const midSessionUpdate: SystemMessage = {
+    role: "system",
+    content: "",
+    timestamp: 1,
+    sections: { tools: pi15Tools, rules: "<rules>\n- Keep tests\n</rules>" },
+    toolsAdded: [{ name: "grep", description: "Search files", parameters: { type: "object", properties: {} } }],
+  };
+  const aggressiveRes = handlers.get("context_with_system")!({ messages: [system, midSessionUpdate] }, ctx);
+  assert.equal(aggressiveRes.messages[0].sections.tools, null);
+  assert.equal(aggressiveRes.messages[0].sections.docs, null);
+  assert.ok(!getSystemMessageText(aggressiveRes.messages[0]).includes("Additional tools may be available."));
+  assert.equal("tools" in aggressiveRes.messages[1].sections, false);
+  assert.equal(renderSystemMessageUpdate(aggressiveRes.messages[1]), 'Updated system prompt section "rules":\n\n<rules>\n- Keep tests\n</rules>');
+  assert.strictEqual(aggressiveRes.messages[1].toolsAdded, midSessionUpdate.toolsAdded);
+
+  const collapsed = collapseSystemMessages({ messages: aggressiveRes.messages } as unknown as TranscriptContext);
+  const collapsedHead = collapsed.messages[0] as SystemMessage;
+  assert.ok(!getSystemMessageText(collapsedHead).includes("Additional tools may be available."));
+  assert.equal(collapsedHead.toolsAdded?.length, 1);
+
+  const crlfPrompt = `${newPreamble}\r\n\r\n${pi15Tools.replaceAll("\n", "\r\n")}\r\n\r\n<cwd>\r\n/workspace\r\n</cwd>`;
+  const crlfChanges: Change[] = [];
+  assert.equal(
+    trimText(crlfPrompt, crlfChanges, { mode: "aggressive" }),
+    "You are a coding assistant. Help users inspect files, run commands, and modify code.\r\n\r\n<cwd>\r\n/workspace\r\n</cwd>",
+  );
+  assert.ok(!formatDiff(crlfChanges).includes("\r"));
+
+  // Forced-prompt content stripping also suppresses redundant mid-session sections.tools nulls.
+  const forcedHead: SystemMessage = { role: "system", content: `${newPreamble}\n\n${pi15Tools}`, timestamp: 0 };
+  const forcedUpdate: SystemMessage = { role: "system", content: "", timestamp: 2, sections: { tools: pi15Tools } };
+  await cmd.handler("mode aggressive", ctx);
+  const forcedRes = handlers.get("context_with_system")!({ messages: [forcedHead, forcedUpdate] }, ctx);
+  assert.equal(forcedRes.messages[0].content, "You are a coding assistant. Help users inspect files, run commands, and modify code.");
+  assert.equal("tools" in forcedRes.messages[1].sections, false);
+
+  // Explicit switch back to default.
+  await cmd.handler("mode default", ctx);
+  assert.match(notifications.pop()!.text, /mode set to default/);
+  const backToDefault = handlers.get("context_with_system")!({ messages: [system] }, ctx);
+  assert.equal(backToDefault.messages[0].sections.tools, pi15Tools);
+
+  // Restore aggressive mode from branch on session_start / session_tree, and reset on empty branch.
+  entries.push({ type: "custom", customType: "pi-trim-mode", data: { mode: "aggressive" } });
+  handlers.get("session_start")!({ type: "session_start", reason: "resume" }, ctx);
+  const resumedRes = handlers.get("context_with_system")!({ messages: [system] }, ctx);
+  assert.equal(resumedRes.messages[0].sections.tools, null);
+
+  entries.length = 0;
+  handlers.get("session_tree")!({ type: "session_tree" }, ctx);
+  const resetRes = handlers.get("context_with_system")!({ messages: [system] }, ctx);
+  assert.equal(resetRes.messages[0].sections.tools, pi15Tools);
+});
+
 test("reports estimates explicitly and never divides by zero", () => {
   assert.match(formatStatus("", "", [], "Preview"), /0.0%/);
   assert.match(formatStatus("abcd", "ab", [], "Preview"), /not provider billing/);
+  assert.match(formatStatus("abcd", "ab", [], "Preview", "aggressive"), /Mode: aggressive/);
   assert.equal(formatDiff([]), "No recognized Pi boilerplate removed.");
 });

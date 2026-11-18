@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0
+
+- Add `/pi-trim mode` (`default` | `aggressive`) with argument completions and session-branch persistence across reload, resume, fork, and tree navigation.
+- In `aggressive` mode, remove Pi's recognized `<tools>` summary list (including `Additional tools may be available.` and Pi 1.0/1.4 equivalents) while preserving API tool schemas, `<rules>`, and custom `<tools>` sections.
+- Suppress redundant mid-session `tools` section deletion notices after `<tools>` has already been stripped from the leading system message.
+- Verify mode toggling, session tree restoration, and real Pi RPC sessions across Pi 1.0.0, 1.4.0, and 1.5.0 fixtures.
+
 ## 0.2.2
 
 - Support the Pi 1.5.0 default identity while preserving compatibility with the previous wording.

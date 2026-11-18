@@ -12,5 +12,15 @@
     "Pi identity",
     "Pi environment rule",
     "Pi documentation"
+  ],
+  "aggressiveAfterTokens": 136,
+  "aggressiveRemovedTokens": 323,
+  "aggressiveRemovedPercent": 70.4,
+  "aggressiveAfterCharacters": 616,
+  "aggressiveChangedSections": [
+    "Pi identity",
+    "Pi tools list",
+    "Pi environment rule",
+    "Pi documentation"
   ]
 }

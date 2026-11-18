@@ -6,12 +6,12 @@ Run `npm ci --ignore-scripts` and `npm run benchmark`.
 
 The harness imports the prompt builder and built-in tool contributions from a fresh npm installation of Pi 1.5.0. It generates the default read/bash/edit/write prompt, normalizes the installation directory to `/opt/pi` and the working directory to `/workspace`, then runs the exact transformer used by the extension.
 
-| Metric | Default Pi | pi-trim |
-| --- | ---: | ---: |
-| `o200k_base` tokens | 459 | 199 |
-| Characters | 2,094 | 892 |
+| Metric | Default Pi | pi-trim (`default`) | pi-trim (`aggressive`) |
+| --- | ---: | ---: | ---: |
+| `o200k_base` tokens | 459 | 199 | 136 |
+| Characters | 2,094 | 892 | 616 |
 
-**260 fewer tokens (56.6%)** in system text. See [prompt.json](prompt.json), [before.txt](before.txt), and [after.txt](after.txt). Generated Pi prompt excerpts are licensed under the upstream [MIT license](PI-LICENSE).
+**260 fewer tokens (56.6%)** in `default` mode, and **323 fewer tokens (70.4%)** in `aggressive` mode (which also strips Pi's `<tools>` summary section while keeping API tool schemas). See [prompt.json](prompt.json), [before.txt](before.txt), and [after.txt](after.txt). Generated Pi prompt excerpts are licensed under the upstream [MIT license](PI-LICENSE).
 
 The fixture includes tool snippets and guidelines, but not full tool schemas, provider request wrappers, skills, addenda, or project instructions. This is tokenizer output, not an API billing measurement. Runtime `/pi-trim status` uses a cheaper chars/4 estimate, which will differ.
 
