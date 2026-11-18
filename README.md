@@ -62,7 +62,7 @@ You can still ask the model about Pi, but its automatic documentation pointers a
 /pi-trim mode default|aggressive
 ```
 
-`status` reports the active mode (`default` or `aggressive`), original and remaining character counts, a **chars / 4 token estimate**, and changed sections. `diff` shows the exact removed or replaced text. `/pi-trim mode` toggles between `default` and `aggressive` (or sets the named mode directly) and persists the selection for the current session branch.
+`status` reports the active mode (`default` or `aggressive`), original and remaining character counts, a **chars / 4 token estimate**, and changed sections. `diff` shows the exact removed or replaced text. `/pi-trim mode` toggles between `default` and `aggressive` (or sets the named mode directly), saves the preference to `pi-trim.json` in your Pi agent directory so it persists across new sessions, and records it on the current session branch.
 
 Before the first model request, the command previews the base prompt. Afterwards, it describes the system text in the most recent request, including system-message updates. Tool schemas are excluded. Other extensions running later can change that request again.
 
@@ -104,7 +104,7 @@ Aggregate tool-call counts were identical. This run does **not** establish bette
 
 The extension hooks `context_with_system` before each model call. It clones recognized system messages, transforms only the relevant content or named sections, and returns the replacement messages. It preserves tool additions/removals and section-deletion markers in mid-session updates. Pi's stored transcript is not rewritten.
 
-The extension itself makes **no network requests, telemetry, model calls, file reads, or file writes**. It only transforms system messages in memory and shows reports on request. Pi's own behavior and installation operations are separate.
+The extension itself makes **no network requests, telemetry, or model calls**, and never patches Pi installation files or rewrites Pi's transcript. System-prompt trimming runs purely in memory; only `/pi-trim mode` saves and reads its mode preference in `pi-trim.json` inside your Pi agent directory (`~/.pi/agent/pi-trim.json` or `$PI_CODING_AGENT_DIR/pi-trim.json`). Pi's own behavior and installation operations are separate.
 
 The generated default prompts of **Pi 1.0.0, 1.4.0, and 1.5.0** are tested with Node.js 22.19+. The manifest follows [Pi's host-provided peer dependency convention](https://pi.dev/docs/latest/packages); it does not bundle Pi. Earlier Pi versions without `context_with_system` are unsupported. Upstream prompt changes may require new matching rules; unknown content passes through.
 

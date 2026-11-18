@@ -1,6 +1,6 @@
 {
   "name": "pi-trim",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Pi coding agent extension that trims Pi-specific identity, documentation, and optionally the <tools> summary list from the system prompt to reduce context usage.",
   "type": "module",
   "license": "MIT",

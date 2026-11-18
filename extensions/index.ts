@@ -1,4 +1,7 @@
-import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { randomUUID } from "node:crypto";
+import { lstatSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { getAgentDir, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import {
   formatDiff,
   formatStatus,
@@ -21,26 +24,71 @@ function describeMode(mode: TrimMode): string {
     : "strips Pi identity, docs, and PI_* env rule; keeps <tools>";
 }
 
-function readModeFromBranch(ctx?: { sessionManager?: { getBranch?: () => readonly unknown[] } }): TrimMode {
+function settingsPath(): string {
+  return join(getAgentDir(), "pi-trim.json");
+}
+
+function readSavedModeRaw(): TrimMode | undefined {
+  try {
+    const path = settingsPath();
+    const stat = lstatSync(path);
+    if (!stat.isFile() || stat.isSymbolicLink()) return undefined;
+    const parsed = JSON.parse(readFileSync(path, "utf8").replace(/^\uFEFF/, "")) as { mode?: unknown };
+    return isTrimMode(parsed?.mode) ? parsed.mode : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function readSavedMode(): TrimMode {
+  return readSavedModeRaw() ?? "default";
+}
+
+function saveMode(mode: TrimMode): { ok: true } | { ok: false; error: string } {
+  const path = settingsPath();
+  const temp = `${path}.${process.pid}.${randomUUID()}.tmp`;
+  try {
+    try {
+      const stat = lstatSync(path);
+      if (!stat.isFile() || stat.isSymbolicLink()) {
+        return { ok: false, error: "settings path is not a regular file" };
+      }
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+        return { ok: false, error: error instanceof Error ? error.message : String(error) };
+      }
+    }
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(temp, JSON.stringify({ mode }, null, 2) + "\n", { encoding: "utf8", mode: 0o600, flag: "wx" });
+    renameSync(temp, path);
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : String(error) };
+  } finally {
+    rmSync(temp, { force: true });
+  }
+}
+
+function readModeFromBranch(ctx?: { sessionManager?: { getBranch?: () => readonly unknown[] } }): TrimMode | undefined {
   const branch = ctx?.sessionManager?.getBranch?.();
-  if (!Array.isArray(branch)) return "default";
+  if (!Array.isArray(branch)) return undefined;
   for (let i = branch.length - 1; i >= 0; i--) {
     const entry = branch[i] as { type?: unknown; customType?: unknown; data?: { mode?: unknown } };
     if (entry?.type === "custom" && entry.customType === MODE_ENTRY_TYPE && isTrimMode(entry.data?.mode)) {
       return entry.data.mode;
     }
   }
-  return "default";
+  return undefined;
 }
 
-/** No filesystem access, network calls, telemetry, or model calls. */
+/** No network requests, telemetry, or model calls. Only /pi-trim mode persists its setting in <agentDir>/pi-trim.json. */
 export default function piTrim(pi: ExtensionAPI) {
-  let mode: TrimMode = "default";
+  let mode: TrimMode = readSavedMode();
   let snapshot: { mode: TrimMode; before: string; after: string; changes: Change[]; scope: string } | undefined;
 
   const syncFromSession = (ctx?: { sessionManager?: { getBranch?: () => readonly unknown[] } }) => {
     snapshot = undefined;
-    mode = readModeFromBranch(ctx);
+    mode = readModeFromBranch(ctx) ?? readSavedMode();
   };
 
   pi.on("session_start", (_event, ctx) => { syncFromSession(ctx); });
@@ -116,13 +164,33 @@ export default function piTrim(pi: ExtensionAPI) {
           return;
         }
         if (nextMode === mode) {
-          if (ctx.hasUI) ctx.ui.notify(`pi-trim mode is already ${mode} (${describeMode(mode)}).`, "info");
+          if (nextArg !== undefined && readSavedModeRaw() !== mode) {
+            const saved = saveMode(mode);
+            if (ctx.hasUI) {
+              ctx.ui.notify(
+                saved.ok
+                  ? `pi-trim mode is already ${mode} (${describeMode(mode)}). Saved for new sessions.`
+                  : `pi-trim mode is already ${mode} (${describeMode(mode)}). Could not save setting: ${saved.error}`,
+                saved.ok ? "info" : "warning",
+              );
+            }
+          } else if (ctx.hasUI) {
+            ctx.ui.notify(`pi-trim mode is already ${mode} (${describeMode(mode)}).`, "info");
+          }
           return;
         }
         mode = nextMode;
         snapshot = undefined;
         pi.appendEntry?.(MODE_ENTRY_TYPE, { mode });
-        if (ctx.hasUI) ctx.ui.notify(`pi-trim mode set to ${mode} (${describeMode(mode)}).`, "info");
+        const saved = saveMode(mode);
+        if (ctx.hasUI) {
+          ctx.ui.notify(
+            saved.ok
+              ? `pi-trim mode set to ${mode} (${describeMode(mode)}).`
+              : `pi-trim mode set to ${mode} (${describeMode(mode)}); session only (${saved.error}).`,
+            saved.ok ? "info" : "warning",
+          );
+        }
         return;
       }
       if ((action !== "status" && action !== "diff") || tokens.length > 1) {

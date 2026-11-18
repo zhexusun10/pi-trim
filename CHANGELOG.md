@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.1
+
+- Persist `/pi-trim mode` across new Pi sessions in `pi-trim.json` inside `getAgentDir()` (`~/.pi/agent/pi-trim.json` or `$PI_CODING_AGENT_DIR/pi-trim.json`), while keeping explicit session-branch `pi-trim-mode` entries higher priority on resume and tree navigation.
+- Isolate `PI_CODING_AGENT_DIR` in extension tests and verify persistence across `new_session` and fresh Pi RPC processes.
+
 ## 0.3.0
 
 - Add `/pi-trim mode` (`default` | `aggressive`) with argument completions and session-branch persistence across reload, resume, fork, and tree navigation.

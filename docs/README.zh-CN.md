@@ -45,7 +45,7 @@ pi install git:github.com/zhexusun10/pi-trim
 /pi-trim mode default|aggressive
 ```
 
-`status` 显示当前模式（`default` 或 `aggressive`）、字符数量、按字符数除以 4 计算的 token **估算值**，以及处理过的段落；`diff` 显示具体删除或替换的文本；`/pi-trim mode` 可在 `default` 和 `aggressive` 之间切换（或直接指定模式）并在当前会话分支持久化。首次请求前是基础提示词预览，之后是最近一次请求中所有系统消息的文本，不包括工具 schema。后执行的其他扩展仍可能继续修改消息。
+`status` 显示当前模式（`default` 或 `aggressive`）、字符数量、按字符数除以 4 计算的 token **估算值**，以及处理过的段落；`diff` 显示具体删除或替换的文本；`/pi-trim mode` 可在 `default` 和 `aggressive` 之间切换（或直接指定模式），并将偏好保存到 Pi agent 目录下的 `pi-trim.json`（对后续新会话持久生效），同时记录在当前会话分支中。首次请求前是基础提示词预览，之后是最近一次请求中所有系统消息的文本，不包括工具 schema。后执行的其他扩展仍可能继续修改消息。
 
 ## 实测
 
@@ -61,7 +61,7 @@ Pi 1.5.0 默认系统提示词：
 
 ## 实现与兼容性
 
-只在内存中处理发给模型的系统消息，使用 `context_with_system` 钩子。扩展本身没有网络请求、遥测、模型调用或文件读写，也不会改写 Pi 安装目录。Pi 自身的行为不受此声明约束。
+只在内存中处理发给模型的系统消息，使用 `context_with_system` 钩子。扩展本身没有网络请求、遥测或模型调用，也不会改写 Pi 的历史记录或安装目录；仅 `/pi-trim mode` 会在 Pi agent 目录读写 `pi-trim.json`（如 `~/.pi/agent/pi-trim.json` 或 `$PI_CODING_AGENT_DIR/pi-trim.json`）以跨新会话持久化模式。Pi 自身的行为不受此声明约束。
 
 已测试 Pi 1.0.0、1.4.0、1.5.0 生成的默认提示词，使用 Node.js 22.19+。没有 `context_with_system` 接口的旧版本不支持。项目以英文文档为主，这份中文说明为次选。
 
